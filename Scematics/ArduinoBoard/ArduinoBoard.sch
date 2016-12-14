@@ -211,7 +211,7 @@ SIGTAP
 Wire Wire Line
 	3100 2800 2850 2800
 Text Label 2850 2800 0    60   ~ 0
-P_ON
+LOCK
 Wire Wire Line
 	3100 2700 2850 2700
 Text Label 2850 2700 0    60   ~ 0
@@ -346,19 +346,6 @@ F 3 "" H 4450 4100 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR?
-U 1 1 584EE04E
-P 4250 3900
-F 0 "#PWR?" H 4250 3750 50  0001 C CNN
-F 1 "+5V" H 4250 4040 50  0000 C CNN
-F 2 "" H 4250 3900 50  0000 C CNN
-F 3 "" H 4250 3900 50  0000 C CNN
-	1    4250 3900
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4250 3900 4250 4000
-$Comp
 L Q_NMOS_DGS Q?
 U 1 1 584EE26B
 P 4150 4600
@@ -427,8 +414,6 @@ F 3 "" H 4000 4250 50  0000 C CNN
 	1    4000 4250
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	4000 4100 4250 4100
 $Comp
 L GND #PWR?
 U 1 1 584EFBD0
@@ -446,4 +431,24 @@ Entry Wire Line
 	3900 3450 4000 3550
 Text Label 4000 3650 0    60   ~ 0
 BNT
+Wire Wire Line
+	4000 4000 4250 4000
+Connection ~ 4000 4000
+$Comp
+L +5V #PWR?
+U 1 1 584EC22A
+P 4150 4200
+F 0 "#PWR?" H 4150 4050 50  0001 C CNN
+F 1 "+5V" H 4150 4340 50  0000 C CNN
+F 2 "" H 4150 4200 50  0000 C CNN
+F 3 "" H 4150 4200 50  0000 C CNN
+	1    4150 4200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4150 4200 4200 4200
+Wire Wire Line
+	4200 4200 4200 4100
+Wire Wire Line
+	4200 4100 4250 4100
 $EndSCHEMATC
