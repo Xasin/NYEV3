@@ -8,16 +8,16 @@
 #ifndef LOCALCODE_SELECTOR_H_
 #define LOCALCODE_SELECTOR_H_
 
-#include "../AVR/Interfacing/Shift/ShiftReg.h"
+#include "../../AVR/Interfacing/Shift/ShiftReg.h"
 #include <avr/io.h>
 
 namespace Fireworks {
-
-extern Interfacing::ShiftReg muplex;
+namespace Selector {
 
 void select(uint8_t nr);
 void selectRow(uint8_t r, uint8_t data);
 
+}
 }
 
 

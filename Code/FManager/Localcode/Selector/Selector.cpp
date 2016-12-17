@@ -8,7 +8,9 @@
 #include "Selector.h"
 
 namespace Fireworks {
+namespace Selector {
 
+// Shift regs connected to the firing circuit
 Interfacing::ShiftReg muplex = Interfacing::ShiftReg(&PORTD, PD5);
 
 void select(uint8_t nr) {
@@ -23,4 +25,5 @@ void selectRow(uint8_t r, uint8_t data) {
 	muplex.write16((1 << r) | (data << 8));
 }
 
+}
 }
