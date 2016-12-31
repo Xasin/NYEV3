@@ -41,11 +41,10 @@ void init() {
 	DDRD |= (1 << PD2);
 	PORTD |= (1<< PD4);
 
+	Manager::update();
 	Sound::init();
 
 	Timer1::enable_CTC(100);
-
-	Manager::standbyOn = 0;
 }
 
 enum FWMode : uint8_t {arming, button_wait, firing};

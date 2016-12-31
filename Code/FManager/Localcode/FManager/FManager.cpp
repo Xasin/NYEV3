@@ -12,14 +12,22 @@ SBuffer toIgnite = SBuffer();
 SMMode mode = firing;
 
 uint8_t standbyOn = 0;
-uint8_t oldStandbyOn = 0;
+uint8_t refrDelay = 0;
 
 void update() {
-	if(standbyOn != oldStandbyOn) {
-		Selector::selectRow(0, standbyOn);
-		oldStandbyOn = standbyOn;
-		FIRE_PIN_ON;
+	if(++refrDelay == 5) {
+		refrDelay = 0;
+
+		if(standbyOn != 0) {
+			Selector::selectRow(0, standbyOn);
+			FIRE_PIN_ON;
+		}
+		else {
+			FIRE_PIN_OFF;
+			Selector::select(255);
+		}
 	}
+
 
 	switch(mode) {
 	case standby:
