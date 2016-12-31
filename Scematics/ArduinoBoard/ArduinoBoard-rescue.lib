@@ -1,11 +1,11 @@
 EESchema-LIBRARY Version 2.3
 #encoding utf-8
 #
-# Battery-RESCUE-MainBoard
+# Battery-RESCUE-ArduinoBoard
 #
-DEF Battery-RESCUE-MainBoard BT 0 0 N Y 1 F N
+DEF Battery-RESCUE-ArduinoBoard BT 0 0 N Y 1 F N
 F0 "BT" 100 50 50 H V L CNN
-F1 "Battery-RESCUE-MainBoard" 100 -50 50 H V L CNN
+F1 "Battery-RESCUE-ArduinoBoard" 100 -50 50 H V L CNN
 F2 "" 0 40 50 V V C CNN
 F3 "" 0 40 50 V V C CNN
 DRAW

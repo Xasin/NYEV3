@@ -29,7 +29,6 @@ LIBS:opto
 LIBS:atmel
 LIBS:contrib
 LIBS:valves
-LIBS:tpic6b595
 LIBS:MainBoard-cache
 EELAYER 25 0
 EELAYER END
@@ -535,7 +534,7 @@ Entry Wire Line
 Entry Wire Line
 	2600 4450 2700 4550
 Text Label 750  4350 0    60   ~ 0
-SER_IN
+RCK
 Entry Wire Line
 	1050 5900 1150 6000
 Entry Wire Line

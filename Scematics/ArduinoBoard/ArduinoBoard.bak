@@ -211,7 +211,7 @@ SIGTAP
 Wire Wire Line
 	3100 2800 2850 2800
 Text Label 2850 2800 0    60   ~ 0
-P_ON
+LOCK
 Wire Wire Line
 	3100 2700 2850 2700
 Text Label 2850 2700 0    60   ~ 0
@@ -451,4 +451,8 @@ Wire Wire Line
 	4200 4200 4200 4100
 Wire Wire Line
 	4200 4100 4250 4100
+Text Notes 3450 2300 0    60   ~ 0
+PB3\nPB2\nPB1\nPB0
+Text Notes 3450 3200 0    60   ~ 0
+PD7\nPD6\nPD5\nPD4\nPD3\nPD2\nPD1\nPD0
 $EndSCHEMATC

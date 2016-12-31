@@ -1,4 +1,5 @@
 EESchema Schematic File Version 2
+LIBS:ArduinoBoard-rescue
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -130,7 +131,7 @@ F 3 "" H 4450 1800 50  0000 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L Battery BT?
+L Battery-RESCUE-ArduinoBoard BT?
 U 1 1 584AEE68
 P 1850 4150
 F 0 "BT?" H 1950 4200 50  0000 L CNN
@@ -451,4 +452,8 @@ Wire Wire Line
 	4200 4200 4200 4100
 Wire Wire Line
 	4200 4100 4250 4100
+Text Notes 3450 2300 0    60   ~ 0
+PB3\nPB2\nPB1\nPB0
+Text Notes 3450 3200 0    60   ~ 0
+PD7\nPD6\nPD5\nPD4\nPD3\nPD2\nPD1\nPD0
 $EndSCHEMATC
