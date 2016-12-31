@@ -9,7 +9,7 @@ namespace Manager {
 SBuffer toIgnite = SBuffer();
 
 // Current status of the firing mechanism
-SMMode mode = standby;
+SMMode mode = firing;
 
 uint8_t standbyOn = 0;
 uint8_t oldStandbyOn = 0;
