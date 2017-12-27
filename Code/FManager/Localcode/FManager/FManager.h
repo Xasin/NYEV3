@@ -20,6 +20,10 @@ enum SMMode : uint8_t {standby, scanning, firing};
 
 extern uint8_t standbyOn;
 
+bool isAvailable(uint8_t n);
+void markFired(uint8_t n);
+uint8_t getNextReady();
+
 void update();
 void fire(uint8_t nr);
 

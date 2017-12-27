@@ -14,6 +14,24 @@ SMMode mode = firing;
 uint8_t standbyOn = 0;
 uint8_t refrDelay = 0;
 
+uint8_t firedSlots[8] = {0};
+
+bool isAvailable(uint8_t n) {
+	return (firedSlots[n/8] & (1<< n%8)) == 0;
+}
+void markFired(uint8_t n) {
+	firedSlots[n/8] |= (1<< n%8);
+}
+
+uint8_t getNextReady() {
+	for(uint8_t i=0; i<64; i++) {
+		if(isAvailable(i))
+			return i;
+	}
+
+	return 255;
+}
+
 void update() {
 	switch(mode) {
 	case standby:
@@ -51,6 +69,10 @@ void update() {
 }
 
 void fire(uint8_t nr) {
+	if(!isAvailable(nr))
+		return;
+
+	markFired(nr);
 	while(toIgnite.available() == 7) {}
 	toIgnite.enqueue(nr);
 
