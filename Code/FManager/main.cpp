@@ -52,16 +52,23 @@ public:
 	FireworksTWI() {}
 
 	bool slavePrepare() {
-		PORTC |= 1;
-
-		if(TWI::targetReg == 0x66) {
+		switch(TWI::targetReg) {
+		case 0x66:
 			TWI::dataPacket = (uint8_t *)&nextToFire;
 			TWI::dataLength = 1;
+		return true;
 
-			return true;
+		case 0x10:
+			Manager::standbyOn &= ~1;
+		return true;
+
+		case 0x11:
+			Manager::standbyOn |= 1;
+		return true;
+
+		default:
+			return false;
 		}
-
-		return false;
 	}
 };
 FireworksTWI fireworksTwi = FireworksTWI();
@@ -75,8 +82,6 @@ void init() {
 	DDRB |= (1 << PB5 | 1 << PB3 | 1 << PB1);
 	DDRD |= (1 << PD2);
 	PORTD |= (1<< PD4);
-
-	DDRC  |= 1; // FIXME
 
 	Manager::update();
 	Sound::init();

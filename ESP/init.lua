@@ -34,5 +34,18 @@ tmr.create():alarm(2000, tmr.ALARM_SINGLE,
 						homeQTT:publish("NYEv3/Current", currentIgnition, 2, 1);
 					end
 				end);
+
+			subscribeTo("NYEv3/Lights", 2,
+				function(data)
+					if(data == "ON") then
+						print("Turning lights on.");
+
+						set_lights(1);
+					else
+						print("Turning lights off.");
+
+						set_lights(0);
+					end
+				end);
 		end);
 	end);

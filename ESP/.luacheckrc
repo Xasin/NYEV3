@@ -16,9 +16,12 @@ stds.nodemcu = {
 		"sntp",
 		"rtctime",
 
+		"onMQTTConnect",
+
 		"homeQTT",
 		"subscribeTo",
 		"raw_send_fire",
+		"set_lights",
 	}
 }
 
