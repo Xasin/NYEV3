@@ -18,13 +18,22 @@
 using namespace Interfacing;
 using namespace Fireworks;
 
+#define PRE_FIRE_WAIL 4
+#define POST_FIRE_WAIL 4
+#define POST_WAIL_WAIT 10
+
+#define REQUIRED_BUTTON_HOLD 10
+#define INVALID_BUTTON_HOLD 30
+
+
 #define BTN_ON 		PORTB |= (1<< PB1);
 #define BTN_OFF		PORTB &= ~(1<<PB1);
 #define BTN_STATE 	(PINB & (1<< PB0))
 
 #define POWER_STATE	(PIND & (1<< PD4))
 
-ShiftReg testreg = ShiftReg(&PORTD, PD5);
+uint8_t buttonPressDuration = 0;
+uint8_t nextFired = 1;
 
 ISR(TIMER1_COMPA_vect) {
 	Manager::update();
@@ -47,7 +56,7 @@ void init() {
 	Timer1::enable_CTC(100);
 }
 
-enum FWMode : uint8_t {arming, button_wait, firing};
+enum FWMode : uint8_t {arming, button_wait, pre_fire, firing};
 FWMode fireworksMode = arming;
 
 
@@ -62,35 +71,68 @@ void state_arming() {
 		_delay_ms(1900);
 	}
 
-	Sound::start_wailing(500);
+	Sound::start_wailing(50);
 	Manager::standbyOn |= 1;
-	wait_seconds(6);
+
+	for(uint8_t i=6; i > 0; i--) {
+		if(POWER_STATE != 0)
+			return;
+
+		_delay_ms(1000);
+	}
 
 	fireworksMode = button_wait;
+	buttonPressDuration = 0;
 }
 
-
-#define PRE_FIRE_WAIL 4
-#define POST_FIRE_WAIL 4
-#define POST_WAIL_WAIT 10
-
-
 void state_button_wait() {
-	BTN_ON;
 	if(BTN_STATE != 0) {
-		BTN_OFF;
+		if(buttonPressDuration <= INVALID_BUTTON_HOLD)
+			buttonPressDuration++;
 
-		Manager::standbyOn |= 1;
-		Sound::start_wailing(PRE_FIRE_WAIL * 100);
+		if(buttonPressDuration < INVALID_BUTTON_HOLD) {
+			Manager::standbyOn |= 1;
 
-		wait_seconds(PRE_FIRE_WAIL);
+			if((buttonPressDuration) & 1) {
+				BTN_ON;
+				Sound::set_frequency(2000, 20);
+			}
+			else if(buttonPressDuration >= REQUIRED_BUTTON_HOLD) {
+				BTN_ON;
+				Sound::set_frequency(2400, 20);
+			}
+			else
+				BTN_OFF;
+		}
+		else if(buttonPressDuration == INVALID_BUTTON_HOLD) {
+			Manager::standbyOn &= ~1;
+			Sound::set_frequency(400, 100);
+			BTN_OFF;
+		}
 
-		fireworksMode = firing;
-		return;
+		_delay_ms(200);
+	}
+	else {
+		bool completed = buttonPressDuration >= REQUIRED_BUTTON_HOLD;
+		if(buttonPressDuration >= INVALID_BUTTON_HOLD)
+			completed = false;
+
+		Manager::standbyOn &= ~1;
+		buttonPressDuration = 0;
+
+		if(completed) {
+			fireworksMode = pre_fire;
+		}
+		else {
+			BTN_OFF;
+			Sound::set_frequency(2200, 10);
+			_delay_ms(100);
+			BTN_ON;
+			_delay_ms(900);
+		}
 	}
 }
 
-uint8_t nextFired = 1;
 void state_firing() {
 	Manager::fire(nextFired++);
 
@@ -99,7 +141,12 @@ void state_firing() {
 	Sound::sound_off();
 	Manager::standbyOn &= ~(1);
 
-	wait_seconds(POST_WAIL_WAIT);
+	for(uint8_t i=POST_WAIL_WAIT; i!=0; i--) {
+		_delay_ms(900);
+		BTN_ON;
+		_delay_ms(100);
+		BTN_OFF;
+	}
 
 	fireworksMode = button_wait;
 }
@@ -118,6 +165,14 @@ int main() {
 
 		case button_wait:
 			state_button_wait();
+		break;
+
+		case pre_fire:
+			Sound::start_wailing(PRE_FIRE_WAIL * 100);
+
+			wait_seconds(PRE_FIRE_WAIL);
+
+			fireworksMode = firing;
 		break;
 
 		case firing:

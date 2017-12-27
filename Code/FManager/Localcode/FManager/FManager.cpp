@@ -15,40 +15,43 @@ uint8_t standbyOn = 0;
 uint8_t refrDelay = 0;
 
 void update() {
-	if(++refrDelay == 5) {
-		refrDelay = 0;
-
-		if(standbyOn != 0) {
-			Selector::selectRow(0, standbyOn);
-			FIRE_PIN_ON;
-		}
-		else {
-			FIRE_PIN_OFF;
-			Selector::select(255);
-		}
-	}
-
-
 	switch(mode) {
 	case standby:
+		if(++refrDelay == 5) {
+			refrDelay = 0;
+
+			if(standbyOn != 0) {
+				Selector::selectRow(0, standbyOn);
+				FIRE_PIN_ON;
+			}
+			else {
+				FIRE_PIN_OFF;
+				Selector::select(255);
+			}
+		}
 	break;
 
 	case firing:
 		FIRE_PIN_OFF;
 		if(toIgnite.available()) {
 			Selector::select(toIgnite.pop());
+			FIRE_PIN_ON;
 		}
 		else {
-			Selector::selectRow(0, standbyOn);
+			if(standbyOn) {
+				Selector::selectRow(0, standbyOn);
+				FIRE_PIN_ON;
+			}
+			else
+				Selector::select(255);
 			mode = standby;
 		}
-		FIRE_PIN_ON;
 	break;
 	}
 }
 
 void fire(uint8_t nr) {
-	while(toIgnite.available() == 8) {}
+	while(toIgnite.available() == 7) {}
 	toIgnite.enqueue(nr);
 
 	mode = firing;
