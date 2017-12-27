@@ -9,6 +9,8 @@
 #include <util/delay.h>
 
 #include "AVR/Interfacing/Shift/ShiftReg.h"
+#include "AVR/Communication/NEW_TWI/TWI.h"
+
 #include "Localcode/Selector/Selector.h"
 #include "Localcode/FManager/FManager.h"
 #include "Localcode/SoundManager/SoundManager.h"
@@ -33,12 +35,36 @@ using namespace Fireworks;
 #define POWER_STATE	(PIND & (1<< PD4))
 
 uint8_t buttonPressDuration = 0;
-uint8_t nextFired = 1;
+
+uint8_t nextToFire = 255;
 
 ISR(TIMER1_COMPA_vect) {
 	Manager::update();
 	Sound::update();
 }
+
+ISR(TWI_vect) {
+	TWI::updateTWI();
+}
+
+class FireworksTWI: public TWI::Job {
+public:
+	FireworksTWI() {}
+
+	bool slavePrepare() {
+		PORTC |= 1;
+
+		if(TWI::targetReg == 0x66) {
+			TWI::dataPacket = (uint8_t *)&nextToFire;
+			TWI::dataLength = 1;
+
+			return true;
+		}
+
+		return false;
+	}
+};
+FireworksTWI fireworksTwi = FireworksTWI();
 
 void wait_seconds(uint16_t seconds) {
 	while(--seconds != 0)
@@ -50,10 +76,15 @@ void init() {
 	DDRD |= (1 << PD2);
 	PORTD |= (1<< PD4);
 
+	DDRC  |= 1; // FIXME
+
 	Manager::update();
 	Sound::init();
 
 	Timer1::enable_CTC(100);
+
+	TWI::init();
+	TWI::setAddr(0x66);
 }
 
 enum FWMode : uint8_t {arming, button_wait, pre_fire, firing};
@@ -71,7 +102,7 @@ void state_arming() {
 		_delay_ms(1900);
 	}
 
-	Sound::start_wailing(50);
+	Sound::start_wailing(500);
 	Manager::standbyOn |= 1;
 
 	for(uint8_t i=6; i > 0; i--) {
@@ -121,7 +152,7 @@ void state_button_wait() {
 		buttonPressDuration = 0;
 
 		if(completed) {
-			fireworksMode = pre_fire;
+			nextToFire = Manager::getNextReady();
 		}
 		else {
 			BTN_OFF;
@@ -133,26 +164,10 @@ void state_button_wait() {
 	}
 }
 
-void state_firing() {
-	Manager::fire(nextFired++);
-
-	wait_seconds(POST_FIRE_WAIL);
-
-	Sound::sound_off();
-	Manager::standbyOn &= ~(1);
-
-	for(uint8_t i=POST_WAIL_WAIT; i!=0; i--) {
-		_delay_ms(900);
-		BTN_ON;
-		_delay_ms(100);
-		BTN_OFF;
-	}
-
-	fireworksMode = button_wait;
-}
-
 int main() {
 	init();
+
+	Manager::markFired(0);
 
 	while(true) {
 		if(POWER_STATE != 0)
@@ -164,19 +179,38 @@ int main() {
 		break;
 
 		case button_wait:
-			state_button_wait();
+			if(nextToFire != 255)
+				fireworksMode = pre_fire;
+			else
+				state_button_wait();
 		break;
 
 		case pre_fire:
+			Manager::standbyOn |= 1;
 			Sound::start_wailing(PRE_FIRE_WAIL * 100);
-
 			wait_seconds(PRE_FIRE_WAIL);
 
 			fireworksMode = firing;
 		break;
 
 		case firing:
-			state_firing();
+			Manager::fire(nextToFire);
+			nextToFire = 255;
+
+			Sound::start_wailing(POST_FIRE_WAIL * 90);
+			wait_seconds(POST_FIRE_WAIL);
+
+			Sound::sound_off();
+			Manager::standbyOn &= ~(1);
+
+			for(uint8_t i=POST_WAIL_WAIT; i!=0; i--) {
+				_delay_ms(900);
+				BTN_ON;
+				_delay_ms(100);
+				BTN_OFF;
+			}
+
+			fireworksMode = button_wait;
 		break;
 		}
 	}
