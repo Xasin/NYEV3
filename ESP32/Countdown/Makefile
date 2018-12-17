@@ -3,9 +3,9 @@
 # project subdirectory.
 #
 
-EXTRA_COMPONENT_DIRS := $(XASCODE_PATH)/ESP32
+PROJECT_NAME := app-template
 
-PROJECT_NAME := NYE-Countdown
+EXTRA_COMPONENT_DIRS := $(XASCODE_PATH)/ESP32/
 
 include $(IDF_PATH)/make/project.mk
 

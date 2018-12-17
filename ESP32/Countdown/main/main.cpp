@@ -6,6 +6,12 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
+#include "lwip/err.h"
+#include "lwip/apps/sntp.h"
+
+#include <ctime>
+
+#include <cstring>
 #include <vector>
 
 #include "main.h"
@@ -26,10 +32,19 @@ const uint8_t sSegCodes[] = {
 };
 
 NeoController rgbController = NeoController(GPIO_NUM_14, RMT_CHANNEL_0, 14);
-Layer		  digitLayer = Layer(14);
+
+Layer	tgtDigitLayer = Layer(14);
+Layer	isDigitLayer = Layer(14);
+
+Layer	tgtBControlLayer = Layer(14);
+Layer	isBControlLayer = Layer(14);
+
+int8_t sSegScrollPos = 30;
 
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
+    char servName[] = "pool.ntp.org\0";
+
 	switch(event->event_id) {
     case SYSTEM_EVENT_STA_START:
 	puts("WiFi STA started!");
@@ -37,6 +52,12 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
     	puts("WiFi connected!");
+
+
+        sntp_setoperatingmode(SNTP_OPMODE_POLL);
+        sntp_setservername(0, servName);
+        sntp_init();
+
     	break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
     	puts("WiFi disconnected!");
@@ -63,33 +84,51 @@ void setup_wifi() {
 	wifi_config_t wifi_cfg = {};
 	wifi_sta_config_t* sta_cfg = &(wifi_cfg.sta);
 
-	//memcpy(sta_cfg->password, WIFI_PASSWD, strlen(WIFI_PASSWD));
-	//memcpy(sta_cfg->ssid, WIFI_SSID, strlen(WIFI_SSID));
+	memcpy(sta_cfg->password, WIFI_PASSWD, strlen(WIFI_PASSWD));
+	memcpy(sta_cfg->ssid, WIFI_SSID, strlen(WIFI_SSID));
 
 	ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_cfg) );
 	ESP_ERROR_CHECK( esp_wifi_start() );
+
+	setenv("TZ", "GMT+1", 1);
+	tzset();
 }
 
 void animation_thread(void *args) {
 	TickType_t delayVariable = 0;
 
 	while(true) {
-		rgbController.colors.merge_overlay(digitLayer);
+
+		if(sSegScrollPos < 28) {
+
+			isDigitLayer[sSegScrollPos/2].merge_add(0x101010);
+			isBControlLayer[sSegScrollPos/2].merge_add(0x111111);
+			tgtDigitLayer[sSegScrollPos/2].alpha = 255;
+
+			sSegScrollPos++;
+		}
+
+		isDigitLayer.merge_overlay(tgtDigitLayer);
+		isBControlLayer.merge_overlay(tgtBControlLayer);
+
+		rgbController.colors = isDigitLayer;
+		rgbController.colors.merge_multiply(isBControlLayer);
+
 		rgbController.update();
 
 		vTaskDelayUntil(&delayVariable, 10);
 	}
 }
 
-void set_digit(uint8_t segCode, Layer &modLayer) {
+void set_digit(uint8_t segCode, Layer &modLayer, Color onColor = 0xFFFFFF, Color offColor = 0) {
 	for(uint8_t i=0; i<7; i++) {
 		if(((segCode >>i) & 1) != 0) {
-			modLayer[2*i].alpha = 255<<7;
-			modLayer[2*i + 1].alpha = 255<<7;
+			modLayer[2*i].merge_overlay(onColor);
+			modLayer[2*i + 1].merge_overlay(onColor);
 		}
 		else {
-			modLayer[2*i].alpha = 0;
-			modLayer[2*i + 1].alpha = 0;
+			modLayer[2*i].merge_overlay(offColor);
+			modLayer[2*i + 1].merge_overlay(offColor);
 		}
 	}
 }
@@ -102,21 +141,53 @@ void app_main(void)
     gpio_set_direction(GPIO_NUM_4, GPIO_MODE_OUTPUT);
     int level = 0;
 
-    digitLayer.alpha = 10;
+    tgtDigitLayer.alpha = 100;
+
+    tgtBControlLayer.alpha = 4;
+    tgtBControlLayer.fill(0x999999);
 
     TaskHandle_t animatorHandle;
-    xTaskCreate(&animation_thread, "Animator", 1024*5, nullptr, 10, &animatorHandle);
+    xTaskCreatePinnedToCore(&animation_thread, "Animator", 1024*5, nullptr, 10, &animatorHandle, 0);
 
-    Layer colorLayer = digitLayer;
-    colorLayer.fill(Color(Material::GREEN, 100));
+    Color colorTypes[] = {
+    		Material::GREEN,
+			Material::YELLOW,
+			Material::AMBER,
+			Material::ORANGE,
+			Material::RED
+    };
 
+    Color rainbowColor[] = {
+    		Material::RED,
+			Material::YELLOW,
+			Material::GREEN,
+			Material::CYAN,
+			Material::BLUE,
+			Material::PINK,
+    };
+
+
+    TickType_t secondTicks = 0;
+
+    std::time_t curTime;
+    std::time(&curTime);
     while (true) {
-    	digitLayer.fill(0x110000);
-    	set_digit(sSegCodes[level%10], colorLayer);
-    	digitLayer.merge_overlay(colorLayer);
+    	uint8_t segCode = sSegCodes[(level)%10];
 
-        level++;
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    	set_digit(segCode, tgtDigitLayer, colorTypes[(level/2)%5], 0);
+    	for(uint8_t i=0; i<14; i++)
+    		tgtDigitLayer[i].alpha = 0;
+
+    	//set_digit(segCode, isDigitLayer, 0x00FF00, Color(0, 0, 0));
+
+    	isBControlLayer.fill(0xBBBBBB);
+    	sSegScrollPos = 0;
+
+        vTaskDelayUntil(&secondTicks, 600);
+        std::time(&curTime);
+        level = std::localtime(&curTime)->tm_min;
+
+        printf("Current time is: %d\n", int(curTime));
     }
 }
 

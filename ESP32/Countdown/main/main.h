@@ -9,7 +9,7 @@
 #define MAIN_MAIN_H_
 
 #include "NeoController.h"
-
+#include "WifiPasswd.h"
 
 extern Peripheral::NeoController rgbController;
 extern Peripheral::Layer		 digitLayer;
