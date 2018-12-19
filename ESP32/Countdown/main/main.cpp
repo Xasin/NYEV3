@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "main.h"
+#include "SegMan.h"
 
 using namespace Peripheral;
 
@@ -172,9 +173,14 @@ void app_main(void)
     std::time_t curTime;
     std::time(&curTime);
     while (true) {
+        std::time(&curTime);
+        level = std::localtime(&curTime)->tm_min;
+
+        printf("Current time is: %d\n", int(curTime));
+
     	uint8_t segCode = sSegCodes[(level)%10];
 
-    	set_digit(segCode, tgtDigitLayer, colorTypes[(level/2)%5], 0);
+    	set_digit(segCode, tgtDigitLayer, Color::HSV(std::localtime(&curTime)->tm_sec), 0);
     	for(uint8_t i=0; i<14; i++)
     		tgtDigitLayer[i].alpha = 0;
 
@@ -184,10 +190,6 @@ void app_main(void)
     	sSegScrollPos = 0;
 
         vTaskDelayUntil(&secondTicks, 600);
-        std::time(&curTime);
-        level = std::localtime(&curTime)->tm_min;
-
-        printf("Current time is: %d\n", int(curTime));
     }
 }
 
