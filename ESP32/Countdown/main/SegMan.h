@@ -20,14 +20,17 @@ private:
 	std::vector<uint8_t> targetSegments;
 
 	int transitPosition;
+	int formerTransitPosition;
 
-	Peripheral::NeoController &rgbController;
+	NeoController &rgbController;
 
 	Layer digits_is;
 	Layer digits_tgt;
 
 	Layer brightness_is;
 	Layer brightness_tgt;
+
+	void update_target_layers();
 
 public:
 	enum TransitMode {
@@ -36,16 +39,23 @@ public:
 		SEGMENTS_DELAYED,
 		SEGMENTS_DELAYED_PARALLEL,
 		SWIPE,
-	};
+	} transitMode;
 
 	const int length;
 
 	Layer onColors;
 	Layer offColors;
 
+	Color transitMarker;
+	int   transitSpeed;
+
 	SegMan(int length, NeoController &controller);
 
+	void update_tick();
+
 	void beat();
+
+	void write_number(long num);
 };
 
 #endif /* MAIN_SEGMAN_H_ */

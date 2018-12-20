@@ -42,6 +42,8 @@ Layer	isBControlLayer = Layer(14);
 
 int8_t sSegScrollPos = 30;
 
+SegMan testMan = SegMan(1, rgbController);
+
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     char servName[] = "pool.ntp.org\0";
@@ -99,6 +101,10 @@ void animation_thread(void *args) {
 	TickType_t delayVariable = 0;
 
 	while(true) {
+		testMan.update_tick();
+		rgbController.update();
+		vTaskDelayUntil(&delayVariable, 10);
+		continue;
 
 		if(sSegScrollPos < 28) {
 
@@ -116,8 +122,6 @@ void animation_thread(void *args) {
 		rgbController.colors.merge_multiply(isBControlLayer);
 
 		rgbController.update();
-
-		vTaskDelayUntil(&delayVariable, 10);
 	}
 }
 
@@ -170,17 +174,25 @@ void app_main(void)
 
     TickType_t secondTicks = 0;
 
+    testMan.transitMode = SegMan::SEGMENTS_DELAYED;
+
     std::time_t curTime;
     std::time(&curTime);
     while (true) {
         std::time(&curTime);
-        level = std::localtime(&curTime)->tm_min;
+        level = std::localtime(&curTime)->tm_sec;
+
+        testMan.write_number(level);
+        testMan.beat();
+
+        vTaskDelayUntil(&secondTicks, 600);
+        continue;
 
         printf("Current time is: %d\n", int(curTime));
 
     	uint8_t segCode = sSegCodes[(level)%10];
 
-    	set_digit(segCode, tgtDigitLayer, Color::HSV(std::localtime(&curTime)->tm_sec), 0);
+    	set_digit(segCode, tgtDigitLayer, Color::HSV(6*std::localtime(&curTime)->tm_sec), 0);
     	for(uint8_t i=0; i<14; i++)
     		tgtDigitLayer[i].alpha = 0;
 
@@ -188,8 +200,6 @@ void app_main(void)
 
     	isBControlLayer.fill(0xBBBBBB);
     	sSegScrollPos = 0;
-
-        vTaskDelayUntil(&secondTicks, 600);
     }
 }
 
