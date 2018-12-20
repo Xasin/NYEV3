@@ -16,8 +16,8 @@ using namespace Peripheral;
 
 class SegMan {
 private:
-	std::vector<uint8_t> currentSegments;
-	std::vector<uint8_t> targetSegments;
+	std::vector<uint16_t> currentSegments;
+	std::vector<uint16_t> targetSegments;
 
 	int transitPosition;
 	int formerTransitPosition;
@@ -33,6 +33,11 @@ private:
 	void update_target_layers();
 
 public:
+	struct LEDPos {
+		int x;
+		int y;
+	};
+
 	enum TransitMode {
 		DIRECT,
 		NUMBERS_DELAYED,
@@ -48,6 +53,8 @@ public:
 
 	Color transitMarker;
 	int   transitSpeed;
+
+	static LEDPos get_led_pos(int i);
 
 	SegMan(int length, NeoController &controller);
 

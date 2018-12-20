@@ -101,6 +101,10 @@ void animation_thread(void *args) {
 	TickType_t delayVariable = 0;
 
 	while(true) {
+        for(int i=0; i<14; i++) {
+        	testMan.onColors[i] = Color::HSV(SegMan::get_led_pos(i).y*10 + xTaskGetTickCount()/30);
+        }
+
 		testMan.update_tick();
 		rgbController.update();
 		vTaskDelayUntil(&delayVariable, 10);
@@ -174,7 +178,9 @@ void app_main(void)
 
     TickType_t secondTicks = 0;
 
-    testMan.transitMode = SegMan::SEGMENTS_DELAYED;
+    testMan.transitMode = SegMan::SWIPE;
+    testMan.transitSpeed = 15;
+    testMan.onColors = Layer(14);
 
     std::time_t curTime;
     std::time(&curTime);
@@ -192,7 +198,7 @@ void app_main(void)
 
     	uint8_t segCode = sSegCodes[(level)%10];
 
-    	set_digit(segCode, tgtDigitLayer, Color::HSV(6*std::localtime(&curTime)->tm_sec), 0);
+    	set_digit(segCode, tgtDigitLayer, Color::HSV(6*std::localtime(&curTime)->tm_min), 0);
     	for(uint8_t i=0; i<14; i++)
     		tgtDigitLayer[i].alpha = 0;
 
