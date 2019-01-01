@@ -57,8 +57,8 @@ SegMan::SegMan(int length, NeoController &controller) :
 	transitMarker(0x888888), transitSpeed(10)
 	{
 
-	digits_tgt.alpha = 13;
-	brightness_tgt.alpha = 5;
+	digits_tgt.alpha = 25;
+	brightness_tgt.alpha = 10;
 	brightness_tgt.fill(0x555555);
 	brightness_is.fill(0);
 }
@@ -82,7 +82,7 @@ void SegMan::update_tick() {
 						transitPosition = -1;
 						break;
 					}
-					currentSegments[i] = targetSegments[i];
+					currentSegments[length-1 -i] = targetSegments[length-1 - i];
 				}
 			break;
 
@@ -92,13 +92,25 @@ void SegMan::update_tick() {
 						transitPosition = -1;
 						break;
 					}
-					currentSegments[i/14] &= ~(1<<(i%14));
-					currentSegments[i/14] |= (1<<(i%14)) & targetSegments[i/14];
+					else if((i%14) == 0) {
+						void *cD = currentSegments.data();
+						void *tD = targetSegments.data();
 
-					if((targetSegments[i/14] >> (i%14)) & 1)
-						digits_is[i].merge_overlay(onColors[i]);
+						if(memcmp(cD, tD, sizeof(uint16_t)*(length-i/14)) == 0) {
+							transitPosition = -1;
+							break;
+						}
+					}
 
-					brightness_is[i].merge_overlay(transitMarker);
+					int iT = length*14-1 -i;
+
+					currentSegments[iT/14] &= ~(1<<(iT%14));
+					currentSegments[iT/14] |= (1<<(iT%14)) & targetSegments[iT/14];
+
+					if((targetSegments[iT/14] >> (iT%14)) & 1)
+						digits_is[iT].merge_overlay(onColors[iT]);
+
+					brightness_is[iT].merge_overlay(transitMarker);
 				}
 			break;
 
@@ -108,12 +120,16 @@ void SegMan::update_tick() {
 						transitPosition = -1;
 						break;
 					}
+
 					for(int n=0; n<length; n++) {
+						if(currentSegments[n] == targetSegments[n])
+							continue;
+
 						currentSegments[n] &= ~(1<<i);
 						currentSegments[n] |= (1<<i) & targetSegments[n];
 
 						if((targetSegments[n] >> i) & 1)
-							digits_is[i].merge_overlay(onColors[i]);
+							digits_is[i + 14*n].merge_overlay(onColors[i + 14*n]);
 
 						brightness_is[14*n + i].merge_overlay(transitMarker);
 					}
@@ -122,7 +138,7 @@ void SegMan::update_tick() {
 
 			case SWIPE:
 				for(int i=0; i<(length*14); i++) {
-					int x = digitLEDPos[i%14].x + 7*(i/14);
+					int x = length*6 - digitLEDPos[i%14].x - 6*(i/14);
 
 					if((x <= scaledTransitPosition) && (x >= formerTransitPosition)) {
 						currentSegments[i/14] &= ~(1<<(i%14));
@@ -133,6 +149,14 @@ void SegMan::update_tick() {
 
 						brightness_is[i].merge_overlay(transitMarker);
 					}
+				}
+
+				if((scaledTransitPosition%6) == 0) {
+					void *cD = currentSegments.data();
+					void *tD = targetSegments.data();
+
+					if(memcmp(cD, tD, sizeof(uint16_t)*(length-scaledTransitPosition/7)) == 0)
+						transitPosition = -1;
 				}
 
 				if(scaledTransitPosition >= (length*7))
@@ -160,7 +184,7 @@ void SegMan::update_tick() {
 }
 
 void SegMan::beat() {
-	brightness_is.fill(0x666666);
+	brightness_is.fill(0x888888);
 }
 
 void SegMan::write_number(long int num) {
@@ -168,4 +192,51 @@ void SegMan::write_number(long int num) {
 		targetSegments[length-1 - i] = sSegCodes[num % 10];
 		num /= 10;
 	}
+}
+
+void SegMan::write_countdown_ms(long int num) {
+	uint8_t segShift = 0;
+
+	if(num < 0)
+		num *= -1;
+
+	// Check for s:ms (largest 9:99)
+	if(num < 10000)
+		segShift = 0;
+	// Check for ss:ms (largest 59:9)
+	else if(num < 60*1000)
+		segShift = 1;
+	// Check for m:ss (largest 9:59)
+	else if(num < 10 * 60 * 1000)
+		segShift = 2;
+	// Check for mm:s (largest 59:5)
+	else if(num < 60*60*1000)
+		segShift = 3;
+	// h:mm (largest 9:59)
+	else if(num < 10*60*60*1000)
+		segShift = 4;
+	else
+		segShift = 5;
+
+	long int cN = 0;
+	cN += (num/10)%100;
+	cN += (num/1000)%60 * 100;
+	cN += (num/(60*1000)%60) * 10000;
+	cN += (num/(60*60*1000)) * 1000000;
+
+	for(uint8_t i=segShift; i!=0; i--)
+		cN /= 10;
+
+	write_number(cN);
+
+	const Color segColors[] = {
+			Material::DEEP_ORANGE,
+			Material::AMBER,
+			Material::GREEN,
+			Material::BLUE
+	};
+
+	for(uint8_t i=0; i<length; i++)
+		for(uint8_t j=0; j<14; j++)
+			onColors[j + 14*i] = segColors[(length-1-i+segShift)/2];
 }

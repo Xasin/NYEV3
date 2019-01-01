@@ -63,6 +63,7 @@ public:
 	void beat();
 
 	void write_number(long num);
+	void write_countdown_ms(long num);
 };
 
 #endif /* MAIN_SEGMAN_H_ */
