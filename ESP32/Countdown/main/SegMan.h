@@ -10,12 +10,12 @@
 
 #include <vector>
 
-#include "NeoController.h"
+#include <xnm/neocontroller.h>
 
-using namespace Peripheral;
+using namespace XNM::Neo;
 
 class SegMan {
-private:
+public:
 	std::vector<uint16_t> currentSegments;
 	std::vector<uint16_t> targetSegments;
 
@@ -63,6 +63,7 @@ public:
 	void beat();
 
 	void write_number(long num);
+	void write_countdown_ms(long num);
 };
 
 #endif /* MAIN_SEGMAN_H_ */

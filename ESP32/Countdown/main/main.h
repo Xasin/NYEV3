@@ -8,10 +8,9 @@
 #ifndef MAIN_MAIN_H_
 #define MAIN_MAIN_H_
 
-#include "NeoController.h"
-#include "WifiPasswd.h"
+#include <xnm/neocontroller.h>
 
-extern Peripheral::NeoController rgbController;
-extern Peripheral::Layer		 digitLayer;
+extern XNM::Neo::NeoController rgbController;
+extern XNM::Neo::Layer		 digitLayer;
 
 #endif /* MAIN_MAIN_H_ */
