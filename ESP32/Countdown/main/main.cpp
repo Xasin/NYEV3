@@ -27,22 +27,12 @@ volatile long int nye_countdown_time = 0;
 
 using namespace XNM::Neo;
 
-const uint8_t sSegCodes[] = {
-		0b0111111,
-		0b0001100,
-		0b1110110,
-		0b1011110,
-		0b1001101,
-		0b1011011,
-		0b1111011,
-		0b0001111,
-		0b1111111,
-		0b1011111
-};
+#define NYE_UNIX_TIMESTAMP 1546297199
 
 NeoController rgbController = NeoController(GPIO_NUM_13, RMT_CHANNEL_0, 3*14);
 
-int8_t sSegScrollPos = 30;
+SegMan testMan = SegMan(3, rgbController);
+IgnMan ignition = IgnMan(GPIO_NUM_25, GPIO_NUM_26, GPIO_NUM_32);
 
 SegMan testMan = SegMan(3, rgbController);
 
@@ -51,6 +41,7 @@ esp_err_t event_handler(void *context, system_event_t *event)
     XNM::NetHelpers::event_handler(event);
     return ESP_OK;
 }
+
 
 void animation_thread(void *args) {
 	TickType_t delayVariable = 0;
@@ -69,17 +60,8 @@ void animation_thread(void *args) {
 	}
 }
 
-void set_digit(uint8_t segCode, Layer &modLayer, Color onColor = 0xFFFFFF, Color offColor = 0) {
-	for(uint8_t i=0; i<7; i++) {
-		if(((segCode >>i) & 1) != 0) {
-			modLayer[2*i].merge_overlay(onColor);
-			modLayer[2*i + 1].merge_overlay(onColor);
-		}
-		else {
-			modLayer[2*i].merge_overlay(offColor);
-			modLayer[2*i + 1].merge_overlay(offColor);
-		}
-	}
+void ignition_thread(void *data) {
+	ignition.ignition_thread();
 }
 
 extern "C"
@@ -100,6 +82,9 @@ void app_main(void)
 
     TaskHandle_t animatorHandle;
     xTaskCreatePinnedToCore(&animation_thread, "Animator", 1024*5, nullptr, 10, &animatorHandle, 1);
+
+    TaskHandle_t ignitionHandle;
+    xTaskCreate(&ignition_thread, "Ignition", 1024*2, nullptr, 3, &ignitionHandle);
 
     Color colorTypes[] = {
     		Material::GREEN,
